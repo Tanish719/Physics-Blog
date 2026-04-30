@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lantern &amp; Lattice — a physics notebook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #262830;
+      --bg-el: #2e3038;
+      --fg: #eae8e0;
+      --fg-m: #9a9690;
+      --fg-d: #6a6660;
+      --rule: #42444e;
+      --rule-s: #353840;
+      --aw: #c8a46e;
+      --ag: rgba(200,164,110,0.18);
+      --serif: "Instrument Serif", Georgia, serif;
+      --mono: "JetBrains Mono", monospace;
+      --sans: "Inter", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(234,232,224,0.025) 0.5px, transparent 1px),
+        radial-gradient(circle at 70% 60%, rgba(234,232,224,0.02) 0.5px, transparent 1px),
+        radial-gradient(circle at 45% 80%, rgba(234,232,224,0.018) 0.5px, transparent 1px);
+      background-size: 180px 180px, 240px 240px, 320px 320px;
+      z-index: 0;
+    }
+    a { color: inherit; text-decoration: none; }
+    ::selection { background: var(--ag); color: var(--fg); }
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--rule-s); }
+
+    /* Shell */
+    .shell {
+      position: relative; z-index: 1;
+      max-width: 1180px; margin: 0 auto; padding: 0 48px;
+    }
+
+    /* Header */
+    .site-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 36px 0 28px; border-bottom: 1px solid var(--rule-s);
+    }
+    .brand { display: flex; align-items: baseline; gap: 14px; }
+    .brand-mark { font-family: var(--serif); font-style: italic; font-size: 26px; letter-spacing: -0.02em; }
+    .brand-sub { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-d); }
+    .nav { display: flex; gap: 28px; }
+    .nav a { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-m); transition: color 160ms; }
+    .nav a:hover { color: var(--fg); }
+    .nav a.active { color: var(--fg); }
+    .nav a.active::after { content: ""; display: block; height: 1px; background: var(--aw); margin-top: 4px; }
+
+    /* Hero */
+    .hero { padding: 80px 0 64px; max-width: 920px; }
+    .hero-meta { display: flex; gap: 18px; align-items: center; margin-bottom: 28px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-d); }
+    .hero-title { font-family: var(--serif); font-size: clamp(44px, 6vw, 76px); line-height: 1.05; font-weight: 400; color: var(--fg); text-wrap: pretty; margin-bottom: 28px; }
+    .hero-lede { font-size: 17px; max-width: 560px; color: var(--fg-m); line-height: 1.65; }
+
+    /* Section head */
+    .section-head { display: flex; align-items: center; gap: 18px; margin: 32px 0 28px; }
+    .section-head .rule { flex: 1; height: 1px; background: var(--rule-s); }
+    .section-head span { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-d); }
+
+    /* Card */
+    .card-list { display: flex; flex-direction: column; }
+    .card {
+      position: relative;
+      display: grid; grid-template-columns: 140px 1fr; gap: 24px;
+      padding: 32px 32px 28px; background: var(--bg);
+      border: 1px solid var(--rule-s);
+      cursor: pointer; transition: background 240ms ease;
+      min-height: 280px; overflow: hidden; text-decoration: none; color: inherit;
+    }
+    .card::before {
+      content: ""; position: absolute; inset: 0;
+      background: radial-gradient(circle at 30% 30%, var(--ag), transparent 60%);
+      opacity: 0; transition: opacity 320ms ease; pointer-events: none;
+    }
+    .card:hover { background: var(--bg-el); }
+    .card:hover::before { opacity: 1; }
+    .card-sigil { width: 120px; height: 120px; color: var(--fg-m); transition: color 280ms ease; display: flex; align-items: flex-start; }
+    .card:hover .card-sigil { color: var(--aw); }
+    .card-sigil svg { width: 120px; height: 120px; }
+    .card-body { display: flex; flex-direction: column; min-width: 0; }
+    .card-top { display: flex; justify-content: space-between; margin-bottom: 14px; }
+    .card-num, .card-topic { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; color: var(--fg-d); }
+    .card-title { font-family: var(--serif); font-size: 30px; line-height: 1.15; margin: 0 0 10px; color: var(--fg); letter-spacing: -0.015em; font-weight: 400; text-wrap: balance; }
+    .card-title::first-letter { font-style: italic; }
+    .card-sub { font-size: 14.5px; color: var(--fg-m); line-height: 1.55; margin: 0 0 14px; max-width: 46ch; }
+    .card-reveal { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 360ms cubic-bezier(.22,1,.36,1), opacity 240ms ease; opacity: 0; overflow: hidden; }
+    .card:hover .card-reveal { grid-template-rows: 1fr; opacity: 1; }
+    .card-reveal > * { min-height: 0; }
+    .card-preview { font-family: var(--serif); font-style: italic; font-size: 16px; color: var(--fg); line-height: 1.5; margin: 4px 0 12px; padding-left: 14px; border-left: 1px solid var(--aw); max-width: 48ch; }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 6px; }
+    .tag { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; color: var(--fg-d); text-transform: lowercase; }
+    .card-foot { margin-top: auto; padding-top: 18px; display: flex; align-items: center; gap: 18px; border-top: 1px dashed var(--rule-s); }
+    .card-date { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--fg-d); }
+    .card-arrow { color: var(--fg-d); transform: translateX(0); transition: transform 320ms cubic-bezier(.22,1,.36,1), color 240ms ease; display: flex; align-items: center; }
+    .card:hover .card-arrow { color: var(--aw); transform: translateX(6px); }
+    .math-dots { display: inline-flex; align-items: center; gap: 4px; }
+    .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--rule); display: inline-block; }
+    .dot.on { background: var(--fg-m); }
+    .math-lbl { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--fg-d); text-transform: uppercase; margin-left: 6px; }
+
+    /* Sigil animation */
+    .card:hover .path-main { animation: action-dash 2.8s ease-in-out infinite; }
+    @keyframes action-dash { 0%,100% { stroke-dashoffset: 0; } 50% { stroke-dashoffset: -8; } }
+    .card:hover .node { animation: node-pulse 2.2s ease-in-out infinite; animation-delay: calc(var(--i) * 200ms); }
+    @keyframes node-pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+    /* Aside */
+    .aside { margin-top: 96px; padding: 48px 0; display: grid; grid-template-columns: repeat(3,1fr); gap: 48px; border-top: 1px solid var(--rule-s); }
+    .aside-col { display: flex; flex-direction: column; gap: 14px; }
+    .aside-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-d); }
+    .aside-quote { font-family: var(--serif); font-size: 20px; line-height: 1.35; color: var(--fg); font-style: italic; }
+    .aside-text { font-size: 14.5px; color: var(--fg-m); line-height: 1.6; max-width: 32ch; }
+
+    /* Footer */
+    .site-footer { margin-top: 120px; padding: 36px 0 48px; border-top: 1px solid var(--rule-s); display: flex; justify-content: space-between; align-items: center; font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-d); }
+
+    /* Post page */
+    .progress-track { position: fixed; top: 0; left: 0; right: 0; height: 2px; background: transparent; z-index: 100; pointer-events: none; }
+    .progress-bar { height: 100%; background: var(--aw); width: 0%; transition: width 80ms linear; box-shadow: 0 0 8px var(--ag); }
+    .post-shell { max-width: 720px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+    .post-back { display: inline-flex; align-items: center; gap: 8px; margin: 36px 0 0; font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-m); cursor: pointer; transition: color 160ms; }
+    .post-back:hover { color: var(--fg); }
+    .post-back:hover svg { transform: translateX(-3px); }
+    .post-back svg { transition: transform 240ms ease; }
+    .post-head { padding: 64px 0 40px; border-bottom: 1px solid var(--rule-s); margin-bottom: 48px; }
+    .post-sigil-lg { width: 72px; height: 72px; color: var(--aw); margin-bottom: 24px; }
+    .post-sigil-lg svg { width: 72px; height: 72px; }
+    .post-title { font-family: var(--serif); font-size: clamp(40px,5.4vw,64px); line-height: 1.06; margin: 0 0 18px; color: var(--fg); letter-spacing: -0.015em; font-weight: 400; text-wrap: pretty; }
+    .post-sub { font-family: var(--serif); font-style: italic; font-size: 22px; line-height: 1.4; color: var(--fg-m); margin: 0; }
+    .post-byline { margin-top: 28px; display: flex; gap: 18px; align-items: center; font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-d); }
+    .sep { color: var(--rule); }
+    .placeholder-badge { display: inline-flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--aw); border: 1px solid var(--aw); padding: 8px 16px; }
+    .placeholder-text { font-family: var(--serif); font-style: italic; font-size: 22px; line-height: 1.55; color: var(--fg-m); max-width: 52ch; }
+    .placeholder-lines { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+    .placeholder-line { height: 1px; background: var(--rule-s); animation: shimmer 2.4s ease-in-out infinite; }
+    .placeholder-line:nth-child(1){width:100%;animation-delay:0ms}
+    .placeholder-line:nth-child(2){width:88%;animation-delay:120ms}
+    .placeholder-line:nth-child(3){width:94%;animation-delay:240ms}
+    .placeholder-line:nth-child(4){width:76%;animation-delay:360ms}
+    .placeholder-line:nth-child(5){width:100%;animation-delay:480ms}
+    .placeholder-line:nth-child(6){width:82%;animation-delay:600ms}
+    @keyframes shimmer { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
+    .post-placeholder { display: flex; flex-direction: column; gap: 24px; padding: 48px 0; }
+    .post-end { margin: 80px 0 60px; padding-top: 36px; border-top: 1px solid var(--rule-s); display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
+    .post-end .sig { font-family: var(--serif); font-style: italic; font-size: 22px; color: var(--fg-m); }
+    .post-end .stamp { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-d); }
+
+    /* Views */
+    #view-post { display: none; }
+
+    @media(max-width:920px){
+      .shell{padding:0 24px}
+      .aside{grid-template-columns:1fr;gap:32px}
+      .hero-title{font-size:44px}
+      .card{grid-template-columns:80px 1fr;padding:24px;min-height:0}
+      .card-sigil{width:80px;height:80px}
+      .card-sigil svg{width:80px;height:80px}
+    }
+    @media(max-width:720px){
+      .post-shell{padding:0 20px}
+      .post-end{flex-direction:column;align-items:flex-start}
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Progress bar (only visible on post) -->
+  <div class="progress-track">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+
+  <div class="shell">
+    <header class="site-header">
+      <div class="brand">
+        <span class="brand-mark">Lantern &amp; Lattice</span>
+        <span class="brand-sub">a physics notebook</span>
+      </div>
+      <nav class="nav">
+        <a href="#" class="active" id="nav-essays" onclick="showHome();return false;">Essays</a>
+        <a href="#">About</a>
+      </nav>
+    </header>
+  </div>
+
+  <!-- ═══════════════════════════════ HOME VIEW ═══════════════════════════════ -->
+  <div id="view-home">
+    <div class="shell">
+      <div class="hero">
+        <div class="hero-meta">
+          <span>Vol. I</span>
+          <span style="color:var(--rule)">—</span>
+          <span>2026</span>
+        </div>
+        <h1 class="hero-title">Physics, written<br><em>as it should be.</em></h1>
+        <p class="hero-lede">Not a textbook. Not a tweet. Each essay picks one idea that deserves more than a paragraph and tries to give it the space to breathe.</p>
+      </div>
+
+      <div class="section-head">
+        <span>Essays</span>
+        <div class="rule"></div>
+        <span>1 published</span>
+      </div>
+
+      <div class="card-list">
+        <div class="card" onclick="showPost()">
+          <div class="card-sigil">
+            <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.3" xmlns="http://www.w3.org/2000/svg">
+              <path class="path-main" d="M18 96 C32 42 54 26 102 32" stroke-dasharray="6 3" stroke-dashoffset="0" stroke-width="1.6" opacity="0.9"/>
+              <path d="M18 96 C28 52 58 22 102 32" opacity="0.2" stroke-width="1"/>
+              <path d="M18 96 C38 36 64 18 102 32" opacity="0.16" stroke-width="1"/>
+              <path d="M18 96 C24 62 50 30 102 32" opacity="0.13" stroke-width="1"/>
+              <path d="M18 96 C44 44 72 20 102 32" opacity="0.1" stroke-width="1"/>
+              <circle class="node" style="--i:0" cx="18" cy="96" r="2.8" fill="currentColor" opacity="0.6"/>
+              <circle class="node" style="--i:1" cx="102" cy="32" r="2.8" fill="currentColor" opacity="0.6"/>
+              <text x="62" y="72" font-size="10" fill="currentColor" opacity="0.35" font-family="Georgia,serif" font-style="italic" text-anchor="middle">δS = 0</text>
+            </svg>
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <span class="card-num">01</span>
+              <span class="card-topic">Classical Mechanics</span>
+            </div>
+            <h2 class="card-title">The principle of least action</h2>
+            <p class="card-sub">Why nature picks the path it does — and why that turns out to be the most powerful idea in all of physics.</p>
+            <div class="card-reveal">
+              <div>
+                <p class="card-preview">Of all the paths a particle could take between two points, it takes the one where the action is stationary. This single sentence contains Newton, Lagrange, Hamilton, and quantum mechanics.</p>
+                <div class="card-tags">
+                  <span class="tag">lagrangian</span>
+                  <span class="tag">action</span>
+                  <span class="tag">variational calculus</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-foot">
+              <div class="math-dots">
+                <span class="dot on"></span>
+                <span class="dot on"></span>
+                <span class="dot"></span>
+              </div>
+              <span class="math-lbl">medium</span>
+              <span class="card-date">Coming soon</span>
+              <span class="card-arrow">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M3 9h12M11 5l4 4-4 4"/>
+                </svg>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="aside">
+        <div class="aside-col">
+          <span class="aside-label">On the project</span>
+          <p class="aside-quote">"The simplest explanation is not a dumbed-down one."</p>
+        </div>
+        <div class="aside-col">
+          <span class="aside-label">Topics ahead</span>
+          <p class="aside-text">Electrodynamics, quantum mechanics, thermodynamics, relativity, astrophysics — written as I learn them.</p>
+        </div>
+        <div class="aside-col">
+          <span class="aside-label">Author</span>
+          <p class="aside-text">Physics undergraduate, University of Basel. Writing to understand, not to summarise.</p>
+        </div>
+      </div>
+
+      <footer class="site-footer">
+        <span>Lantern &amp; Lattice</span>
+        <span>Basel · 2026</span>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ POST VIEW ═══════════════════════════════ -->
+  <div id="view-post">
+    <div class="post-shell">
+      <div class="post-back" onclick="showHome()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M9 2L4 7l5 5"/>
+        </svg>
+        All Essays
+      </div>
+
+      <div class="post-head">
+        <div class="post-sigil-lg">
+          <svg viewBox="0 0 72 72" fill="none" stroke="currentColor" stroke-width="1.3" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 58 C20 26 36 14 62 18" stroke-dasharray="5 3" stroke-width="1.6" opacity="0.9"/>
+            <path d="M10 58 C18 30 38 12 62 18" opacity="0.2" stroke-width="1"/>
+            <path d="M10 58 C24 22 44 10 62 18" opacity="0.14" stroke-width="1"/>
+            <circle cx="10" cy="58" r="2.2" fill="currentColor" opacity="0.7"/>
+            <circle cx="62" cy="18" r="2.2" fill="currentColor" opacity="0.7"/>
+            <text x="38" y="46" font-size="8" fill="currentColor" opacity="0.5" font-family="Georgia,serif" font-style="italic" text-anchor="middle">δS = 0</text>
+          </svg>
+        </div>
+        <h1 class="post-title">The principle of<br><em>least action</em></h1>
+        <p class="post-sub">Why nature picks the path it does — and why that turns out to be the most powerful idea in all of physics.</p>
+        <div class="post-byline">
+          <span>Classical Mechanics</span>
+          <span class="sep">—</span>
+          <span>Coming soon</span>
+          <span class="sep">·</span>
+          <span>~12 min read</span>
+        </div>
+      </div>
+
+      <div class="post-placeholder">
+        <div class="placeholder-badge">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.2">
+            <circle cx="5" cy="5" r="4"/>
+            <path d="M5 3v2l1.2 1.2"/>
+          </svg>
+          Essay in progress
+        </div>
+        <p class="placeholder-text">Of all the paths a particle could take between two points, it takes the one where the action is stationary. This single sentence contains Newton, Lagrange, Hamilton, and quantum mechanics.</p>
+        <p class="placeholder-text" style="font-size:17px;opacity:0.55;">The full essay is being written. Check back soon.</p>
+        <div class="placeholder-lines">
+          <div class="placeholder-line"></div>
+          <div class="placeholder-line"></div>
+          <div class="placeholder-line"></div>
+          <div class="placeholder-line"></div>
+          <div class="placeholder-line"></div>
+          <div class="placeholder-line"></div>
+        </div>
+      </div>
+
+      <div class="post-end">
+        <span class="sig">— T.K.</span>
+        <span class="stamp">Basel · 2026</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showPost() {
+      document.getElementById('view-home').style.display = 'none';
+      document.getElementById('view-post').style.display = 'block';
+      window.scrollTo(0, 0);
+      document.getElementById('nav-essays').classList.remove('active');
+    }
+
+    function showHome() {
+      document.getElementById('view-post').style.display = 'none';
+      document.getElementById('view-home').style.display = 'block';
+      window.scrollTo(0, 0);
+      document.getElementById('nav-essays').classList.add('active');
+    }
+
+    // Progress bar
+    window.addEventListener('scroll', function () {
+      var scrollTop = window.scrollY;
+      var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      var pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      document.getElementById('progress-bar').style.width = pct + '%';
+    });
+  </script>
+
+</body>
+</html>
